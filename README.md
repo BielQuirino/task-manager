@@ -10,27 +10,27 @@ This project is an API for creating and managing lists and tasks. The API suppor
 
 Follow these steps to set up the project locally:
 
-1. **Clone the repository:**
+### 1. **Clone the repository:**
 
    ```
    git clone https://github.com/BielQuirino/task-manager.git
    ```
-2. **Navigate to the project directory:**
+## 2. **Navigate to the project directory:**
 
   ```
   cd task-manager 
   ```
 
-3.**Install dependencies:**
+## 3.**Install dependencies:**
 
 ```
 npm install
 ```
-4.**Configure MongoDB:**
+## 4.**Configure MongoDB:**
 
-Make sure MongoDB is installed and running at mongodb://localhost:27017/TaskManager. You can change the connection URL in the db/mongoose.js file if necessary.
+## Make sure MongoDB is installed and running at mongodb://localhost:27017/TaskManager. You can change the connection URL in the db/mongoose.js file if necessary.
 
-5.**Usage**
+## 5.**Usage**
 Start the server:
 
 ```
