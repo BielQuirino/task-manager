@@ -361,6 +361,13 @@ app.delete('/lists/:listId/tasks/:taskId', (req, res) => {
   });
 });
 
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
-});
+// Function to start the server
+function startServer() {
+    const PORT = 3000;
+    return app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+// Export the app and startServer function
+module.exports = { app, startServer };
