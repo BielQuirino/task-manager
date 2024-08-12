@@ -1,143 +1,366 @@
 const express = require('express');
 const app = express();
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
-const {mongoose} = require('./db/mongoose');
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Task Manager API',
+      version: '1.0.0',
+      description: 'API for task management',
+      contact: {
+        name: 'Gabriel',
+      },
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Local server',
+      },
+    ],
+  },
+  apis: ['./app.js'], 
+};
 
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+const { mongoose } = require('./db/mongoose');
 const bodyParser = require('body-parser');
 
-
-//load mongoose models
+// Load mongoose models
 const { List, Task } = require('./db/models');
-
 
 // Load middleware
 app.use(bodyParser.json());
 
+/**
+ * @swagger
+ * tags:
+ *   name: Lists
+ *   description: API for managing task lists
+ */
 
-
-/*List routes */
-
-/* GET /lists
-Get all lists
-*/
+/**
+ * @swagger
+ * /lists:
+ *   get:
+ *     summary: Get all lists
+ *     tags: [Lists]
+ *     responses:
+ *       200:
+ *         description: Array of all lists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   title:
+ *                     type: string
+ */
 app.get('/lists', (req, res) => {
-    /*Return an array of all the lists in the db */
-    List.find({}).then( (lists) => {
-        res.send(lists);
-    })
-} );
-
-/* POST /lists
-Create a list
-*/
-
-app.post('/lists', (req, res) =>{
-    //Create a new list and return the new list with id
-    let title = req.body.title;
-
-    let newList = new List({
-        title
-    });
-    newList.save().then((listDoc) => {
-        //Full list doc return
-        res.send(listDoc);
-    })
+  List.find({}).then((lists) => {
+    res.send(lists);
+  });
 });
 
+/**
+ * @swagger
+ * /lists:
+ *   post:
+ *     summary: Create a new list
+ *     tags: [Lists]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: The created list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 title:
+ *                   type: string
+ */
+app.post('/lists', (req, res) => {
+  let title = req.body.title;
 
-/* PATH/lists/:id
-Update a specified list
-*/
+  let newList = new List({
+    title,
+  });
+  newList.save().then((listDoc) => {
+    res.send(listDoc);
+  });
+});
+
+/**
+ * @swagger
+ * /lists/{id}:
+ *   patch:
+ *     summary: Update a specified list
+ *     tags: [Lists]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The list ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: The updated list
+ */
 app.patch('/lists/:id', (req, res) => {
-    List.findOneAndUpdate({ _id: req.params.id}, {
-        $set: req.body
-    }).then( () => {
-        res.sendStatus(200);
-    });
+  List.findOneAndUpdate({ _id: req.params.id }, {
+    $set: req.body,
+  }).then(() => {
+    res.sendStatus(200);
+  });
 });
 
-
-/* DELETE/lists/:id
-Delete a list
-*/
+/**
+ * @swagger
+ * /lists/{id}:
+ *   delete:
+ *     summary: Delete a specified list
+ *     tags: [Lists]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The list ID
+ *     responses:
+ *       200:
+ *         description: The deleted list
+ */
 app.delete('/lists/:id', (req, res) => {
-    // delete a specified list
-    List.findOneAndDelete({
-        _id: req.params.id
-    }).then((removedListDoc) => {
-        res.send(removedListDoc);
-    })
+  List.findOneAndDelete({
+    _id: req.params.id,
+  }).then((removedListDoc) => {
+    res.send(removedListDoc);
+  });
 });
 
-/*GET /lists/:listId/tasks
-Get all tasks
-*/
-
+/**
+ * @swagger
+ * /lists/{listId}/tasks:
+ *   get:
+ *     summary: Get all tasks for a specific list
+ *     tags: [Lists, Tasks]
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The list ID
+ *     responses:
+ *       200:
+ *         description: Array of tasks for the specified list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   title:
+ *                     type: string
+ *                   _listId:
+ *                     type: string
+ */
 app.get('/lists/:listid/tasks', (req, res) => {
-    //return all task in list
-    Task.find({
-        _listId: req.params.listid
-    }).then( (tasks) => {
-        res.send(tasks);
-    })
-})
+  Task.find({
+    _listId: req.params.listid,
+  }).then((tasks) => {
+    res.send(tasks);
+  });
+});
 
-
+/**
+ * @swagger
+ * /lists/{listId}/tasks/{taskId}:
+ *   get:
+ *     summary: Get a specific task from a specific list
+ *     tags: [Lists, Tasks]
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The list ID
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The task ID
+ *     responses:
+ *       200:
+ *         description: The task
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 _id:
+ *                   type: string
+ *                 title:
+ *                   type: string
+ *                 _listId:
+ *                   type: string
+ */
 app.get('/lists/:listId/tasks/:taskId', (req, res) => {
-    Task.findOne({
-        _id: req.params.taskId,
-        _listId: req.params.listId
-    }).then((task) => {
-        res.send(task);
-    })
-})
+  Task.findOne({
+    _id: req.params.taskId,
+    _listId: req.params.listId,
+  }).then((task) => {
+    res.send(task);
+  });
+});
 
-/* POST /lists/:listId/tasks
-Create a new task in a specified by listId
-*/
-
+/**
+ * @swagger
+ * /lists/{listId}/tasks:
+ *   post:
+ *     summary: Create a new task in a specified list
+ *     tags: [Lists, Tasks]
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The list ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: The created task
+ */
 app.post('/lists/:listId/tasks', (req, res) => {
-    //Create new task in the list with id
-    let newTask = new Task({
-        title: req.body.title,
-        _listId: req.params.listId
-    });
-    newTask.save().then( (newTaskDoc) => {
-        res.send(newTaskDoc);
-    })
-})
+  let newTask = new Task({
+    title: req.body.title,
+    _listId: req.params.listId,
+  });
+  newTask.save().then((newTaskDoc) => {
+    res.send(newTaskDoc);
+  });
+});
 
+/**
+ * @swagger
+ * /lists/{listId}/tasks/{taskId}:
+ *   patch:
+ *     summary: Update a specific task
+ *     tags: [Lists, Tasks]
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The list ID
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The task ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: The updated task
+ */
+app.patch('/lists/:listId/tasks/:taskId', (req, res) => {
+  Task.findOneAndUpdate({
+    _id: req.params.taskId,
+    _listId: req.params.listId,
+  }, {
+    $set: req.body,
+  }).then(() => {
+    res.sendStatus(200);
+  });
+});
 
-/* PATCH /lists/:listId/tasks/:taskId
-Update a task
-*/
-
-app.patch('/lists/:listId/taks/:taskId', (req, res) =>{
-    //Update a task by TaskId
-    Task.findOneAndUpdate({
-        _id: req.params.taskId,
-        _listId: req.params.listId
-    },{
-        $set: req.body
-    }
-    ).then(() => {
-        res.sendStatus(200);
-    })
-})
-
-/* DELETE /lists/:listId/tasks/:taskId 
-Delete a task
-*/
+/**
+ * @swagger
+ * /lists/{listId}/tasks/{taskId}:
+ *   delete:
+ *     summary: Delete a specific task
+ *     tags: [Lists, Tasks]
+ *     parameters:
+ *       - in: path
+ *         name: listId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The list ID
+ *       - in: path
+ *         name: taskId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The task ID
+ *     responses:
+ *       200:
+ *         description: The deleted task
+ */
 app.delete('/lists/:listId/tasks/:taskId', (req, res) => {
-    Task.findOneAndDelete({
-        _id: req.params.taskId,
-        _listId: req.params.listId
-    }).then( (removedTaskDoc) => {
-        res.send(removedTaskDoc);
-    })
-})
+  Task.findOneAndDelete({
+    _id: req.params.taskId,
+    _listId: req.params.listId,
+  }).then((removedTaskDoc) => {
+    res.send(removedTaskDoc);
+  });
+});
 
 app.listen(3000, () => {
-    console.log("Server running in port 3000");
-})
+  console.log("Server running on port 3000");
+});
